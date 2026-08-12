@@ -161,7 +161,6 @@ jobs:
 
         run: |
           pytest \
-            -n auto \
             testing/test_damncrud.py \
             -v
 

@@ -14,7 +14,7 @@ if (!isset($_SESSION['user'])) {
         $created = date('Y-m-d H:i:s');
         // Insert new record into the contacts table
         $stmt = $pdo->prepare('INSERT INTO contacts VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$id, $name, $email, $phone, $title, $created]);
+        $stmt->execute([null, $name, $email, $phone, $title, $created]);
         header("location:index.php");
     }
     ?>
