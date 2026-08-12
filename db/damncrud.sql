@@ -14,11 +14,11 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
--- Dumping database structure for damncrud
-CREATE DATABASE IF NOT EXISTS `damncrud` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
-USE `damncrud`;
+-- Dumping database structure for badcrud
+CREATE DATABASE IF NOT EXISTS `badcrud` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+USE `badcrud`;
 
--- Dumping structure for table damncrud.contacts
+-- Dumping structure for table badcrud.contacts
 CREATE TABLE IF NOT EXISTS `contacts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 -- Dumping data for table damncrud.users: ~1 rows (approximately)
 INSERT INTO `users` (`id_user`, `username`, `password`) VALUES
-	(1, 'admin', '9feac9a05349e4ccc78fb9d9b4ab61b33f868c7f8b8acd56dc7303c1af0cb7ca');
+	(1, 'admin', 'cd7af172a7a9165ff9f8e74a78d7bbabcc4fe878c723d2b8894f6d74217c4a08');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

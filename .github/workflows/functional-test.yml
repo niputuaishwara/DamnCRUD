@@ -27,7 +27,7 @@ jobs:
           - 3306:3306
 
         options: >-
-          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pt00r"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -61,7 +61,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r testing/requirements.txt
 
 
       # ==========================================
@@ -86,7 +86,7 @@ jobs:
             mysqladmin ping \
               -h 127.0.0.1 \
               -u root \
-              -proot && break
+              -pt00r && break
 
             sleep 2
           done
@@ -101,8 +101,8 @@ jobs:
           mysql \
             -h 127.0.0.1 \
             -u root \
-            -proot \
-            badcrud < database/badcrud.sql
+            -pt00r \
+            badcrud < db/damncrud.sql
 
 
       # ==========================================
@@ -114,14 +114,14 @@ jobs:
           mysql \
             -h 127.0.0.1 \
             -u root \
-            -proot \
+            -pt00r \
             badcrud \
             -e "SHOW TABLES;"
 
           mysql \
             -h 127.0.0.1 \
             -u root \
-            -proot \
+            -pt00r \
             badcrud \
             -e "SELECT * FROM users;"
 
