@@ -1,64 +1,176 @@
-name: DamnCRUD CI/CD
+name: DamnCRUD Functional Testing
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - main
 
 jobs:
-  test:
+
+  functional-test:
+
     runs-on: ubuntu-latest
 
     services:
+
       mysql:
         image: mysql:8.0
+
         env:
           MYSQL_ROOT_PASSWORD: t00r
           MYSQL_DATABASE: badcrud
+
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
 
-    - name: Setup Database Data
-      run: |
-        # Replace damncrud with badcrud in the SQL dump so it imports correctly
-        sed -i 's/`damncrud`/`badcrud`/g' db/damncrud.sql
-        mysql -h 127.0.0.1 -P 3306 -u root -pt00r badcrud < db/damncrud.sql
-        
-        # Reset password to admin to match tests
-        mysql -h 127.0.0.1 -P 3306 -u root -pt00r badcrud -e "UPDATE users SET password = '$(php -r "echo hash('sha256', 'adminXDrBmrW9g2fb');")' WHERE username = 'admin';"
-        
-        # Modify functions.php to use t00r password for CI/CD environment
-        sed -i "s/\$DATABASE_PASS = '.*';/\$DATABASE_PASS = 't00r';/g" functions.php
+      # ==========================================
+      # 1. Checkout repository
+      # ==========================================
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Start PHP Server
-      run: |
-        # Menggunakan sudo jika port 80 dibutuhkan
-        # Menjadikan direktori induk (..) sebagai root agar path /DamnCRUD valid
-        sudo php -S 127.0.0.1:80 -t .. &
-        # Tunggu server siap
-        sleep 3
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      # ==========================================
+      # 2. Setup Python
+      # ==========================================
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r testing/requirements.txt
+      - name: Setup Python
+        uses: actions/setup-python@v5
 
-    - name: Run Selenium Tests Parallel
-      run: |
-        pytest -n auto testing/test_damncrud.py
+        with:
+          python-version: "3.11"
+
+
+      # ==========================================
+      # 3. Install Python dependencies
+      # ==========================================
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+
+      # ==========================================
+      # 4. Setup PHP
+      # ==========================================
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+
+        with:
+          php-version: "8.2"
+          extensions: mysqli, pdo, pdo_mysql
+
+
+      # ==========================================
+      # 5. Wait for MySQL
+      # ==========================================
+
+      - name: Wait for MySQL
+        run: |
+          for i in {1..30}; do
+            mysqladmin ping \
+              -h 127.0.0.1 \
+              -u root \
+              -proot && break
+
+            sleep 2
+          done
+
+
+      # ==========================================
+      # 6. Import database
+      # ==========================================
+
+      - name: Import database
+        run: |
+          mysql \
+            -h 127.0.0.1 \
+            -u root \
+            -proot \
+            badcrud < database/badcrud.sql
+
+
+      # ==========================================
+      # 7. Verify database
+      # ==========================================
+
+      - name: Verify database
+        run: |
+          mysql \
+            -h 127.0.0.1 \
+            -u root \
+            -proot \
+            badcrud \
+            -e "SHOW TABLES;"
+
+          mysql \
+            -h 127.0.0.1 \
+            -u root \
+            -proot \
+            badcrud \
+            -e "SELECT * FROM users;"
+
+
+      # ==========================================
+      # 8. Start PHP server
+      # ==========================================
+
+      - name: Start PHP server
+        run: |
+          php -S 127.0.0.1:8000 \
+            -t . > php-server.log 2>&1 &
+
+          sleep 5
+
+
+      # ==========================================
+      # 9. Check application
+      # ==========================================
+
+      - name: Check DamnCRUD
+        run: |
+          curl -f \
+            http://127.0.0.1:8000/login.php
+
+
+      # ==========================================
+      # 10. Run 5 functional tests
+      #     using Pytest in parallel
+      # ==========================================
+
+      - name: Run functional tests
+        env:
+          BASE_URL: http://127.0.0.1:8000/
+          TEST_USERNAME: admin
+          TEST_PASSWORD: admin
+
+        run: |
+          pytest \
+            -n auto \
+            testing/test_damncrud.py \
+            -v
+
+
+      # ==========================================
+      # 11. Show PHP log if failed
+      # ==========================================
+
+      - name: Show PHP server log
+        if: failure()
+        run: |
+          cat php-server.log
