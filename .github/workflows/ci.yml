@@ -41,7 +41,8 @@ jobs:
     - name: Start PHP Server
       run: |
         # Menggunakan sudo jika port 80 dibutuhkan
-        sudo php -S 127.0.0.1:80 -t . &
+        # Menjadikan direktori induk (..) sebagai root agar path /DamnCRUD valid
+        sudo php -S 127.0.0.1:80 -t .. &
         # Tunggu server siap
         sleep 3
 
