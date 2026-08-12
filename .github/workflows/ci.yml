@@ -32,6 +32,9 @@ jobs:
         
         # Reset password to admin to match tests
         mysql -h 127.0.0.1 -P 3306 -u root -pt00r badcrud -e "UPDATE users SET password = '$(php -r "echo hash('sha256', 'adminXDrBmrW9g2fb');")' WHERE username = 'admin';"
+        
+        # Modify functions.php to use t00r password for CI/CD environment
+        sed -i "s/\$DATABASE_PASS = '.*';/\$DATABASE_PASS = 't00r';/g" functions.php
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
