@@ -1,0 +1,60 @@
+name: DamnCRUD CI/CD
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: t00r
+          MYSQL_DATABASE: badcrud
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Database Data
+      run: |
+        # Replace damncrud with badcrud in the SQL dump so it imports correctly
+        sed -i 's/`damncrud`/`badcrud`/g' db/damncrud.sql
+        mysql -h 127.0.0.1 -P 3306 -u root -pt00r badcrud < db/damncrud.sql
+        
+        # Reset password to admin to match tests
+        mysql -h 127.0.0.1 -P 3306 -u root -pt00r badcrud -e "UPDATE users SET password = '$(php -r "echo hash('sha256', 'adminXDrBmrW9g2fb');")' WHERE username = 'admin';"
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+
+    - name: Start PHP Server
+      run: |
+        # Menggunakan sudo jika port 80 dibutuhkan
+        sudo php -S 127.0.0.1:80 -t . &
+        # Tunggu server siap
+        sleep 3
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r testing/requirements.txt
+
+    - name: Run Selenium Tests Parallel
+      run: |
+        pytest -n auto testing/test_damncrud.py
